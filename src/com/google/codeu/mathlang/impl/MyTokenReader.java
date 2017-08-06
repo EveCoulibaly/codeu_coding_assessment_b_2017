@@ -71,22 +71,16 @@ public final class MyTokenReader implements TokenReader {
           // read a token that is surrounded by quotes
           current = readWithQuotes();
           return new StringToken(current);
-        } else if (Character.isDigit(peek())){
+        } else if (Character.isDigit(peek())) {
           current = readNumber();
           double value = Double.parseDouble(current);
           return new NumberToken(value);
-        }
-        else {
-          // read a token that is not surrounded by quotes
-          current = readWithNoQuotes();
-
-          if (isName(current)) {
-            return new NameToken(current);
-          } else if (isSymbol(current)) {
-            return new SymbolToken(current.charAt(0));
-          } else {
-            throw new IOException("Invalid input");
-          }
+        } else if (Character.isAlphabetic(peek())) {
+          current = readName();
+          return new NameToken(current);
+        } else {
+          current = readSymbol();
+          return new SymbolToken(current.charAt(0));
         }
   }
 
@@ -105,18 +99,35 @@ public final class MyTokenReader implements TokenReader {
     return c;
   }
 
-  private String readWithNoQuotes() throws IOException {
-    token.setLength(0);  // clear the token
-    while (remaining() > 0 && !Character.isWhitespace(peek())) {
-      token.append(read());
-    }
-    return token.toString();
+
+  private int remaining() {
+    return source.length() - position;
   }
 
   private String readNumber() throws IOException {
     token.setLength(0);  // clear the token
 
     while (remaining() > 0 && Character.isDigit(peek())) {
+      token.append(read());
+    }
+    return token.toString();
+  }
+
+  private String readSymbol() throws IOException {
+    token.setLength(0); // clear the token
+
+    if (!Character.isAlphabetic(peek()) &&
+            !Character.isDigit(peek()) &&
+            peek() != '.') {
+      token.append(read());
+    }
+    return token.toString();
+  }
+
+  private String readName() throws IOException {
+    token.setLength(0); // clear the token
+
+    while(remaining() > 0 && Character.isAlphabetic(peek())) {
       token.append(read());
     }
     return token.toString();
@@ -132,20 +143,6 @@ public final class MyTokenReader implements TokenReader {
     }
     read(); // read the closing the quote that allowed us to exit the loop
     return token.toString();
-  }
-
-  private int remaining() {
-    return source.length() - position;
-  }
-
-  private boolean isSymbol(String input){
-    return (!Character.isAlphabetic(input.charAt(0)) &&
-            !Character.isDigit(input.charAt(0)) &&
-            input.charAt(0) != '.');
-  }
-
-  private boolean isName(String input) {
-    return Character.isAlphabetic(input.charAt(0));
   }
 
 }
